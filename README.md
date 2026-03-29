@@ -336,15 +336,3 @@ ruff check src/ tests/
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
-
-## Citation
-
-If you use this tool in academic work, please cite:
-
-```bibtex
-@software{siconfi_collector,
-  title  = {siconfi-collector: A Data Collector for Brazil's Public Finance API},
-  year   = {2026},
-  url    = {https://github.com/<your-username>/siconfi-collector}
-}
-```
