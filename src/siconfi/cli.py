@@ -32,7 +32,7 @@ from pathlib import Path
 
 import click
 
-from siconfi.entities import EntityRegistry, Entity, STATE_NAMES, REGIONS
+from siconfi.entities import REGIONS, STATE_NAMES, Entity, EntityRegistry
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -119,7 +119,7 @@ def _print_result(result) -> None:
     click.echo(f"  Empty responses: {result.empty}")
     click.echo(f"  Failed         : {result.failed}")
     if result.errors:
-        click.echo(f"  First 5 errors:")
+        click.echo("  First 5 errors:")
         for err in result.errors[:5]:
             click.echo(f"    • {err}")
     click.echo("──────────────────────────")
@@ -217,7 +217,11 @@ _entity_options = [
                  help="IBGE code(s) of specific entities."),
     click.option("--state", "-s", "states", multiple=True,
                  help="Collect all municipalities in state(s) (e.g. SP, RJ)."),
-    click.option("--region", "-r", help="Collect all municipalities in a region (NO/NE/SE/SU/CO)."),
+    click.option(
+        "--region",
+        "-r",
+        help="Collect all municipalities in a region (NO/NE/SE/SU/CO).",
+    ),
     click.option("--all", "all_flag", is_flag=True,
                  help="Collect data for ALL municipalities in Brazil."),
     click.option("--min-pop", type=int, default=0, show_default=True,
@@ -478,7 +482,7 @@ def transform(ctx: click.Context, annex: str, cumulative: bool, output: str | No
     click.echo(f"  Rows     : {n_rows}")
     click.echo(f"  Accounts : {len(accounts)}")
     click.echo(f"  Saved to : {out_path}")
-    click.echo(f"\n  Revenue categories found:")
+    click.echo("\n  Revenue categories found:")
     for acc in accounts:
         click.echo(f"    - {acc}")
 
@@ -532,7 +536,7 @@ def transform_monthly(ctx: click.Context, annex: str, output: str | None) -> Non
     click.echo(f"  Rows     : {n_rows} ({n_rows // max(n_entities, 1)} months/entity)")
     click.echo(f"  Accounts : {len(accounts)}")
     click.echo(f"  Saved to : {out_path}")
-    click.echo(f"\n  Revenue categories:")
+    click.echo("\n  Revenue categories:")
     for acc in accounts:
         click.echo(f"    - {acc}")
 
