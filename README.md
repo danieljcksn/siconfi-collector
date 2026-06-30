@@ -16,6 +16,10 @@ SICONFI aggregates fiscal reports from all 5,570 Brazilian municipalities, 26 st
 - **Entity registry cache** — fetches the full municipality/state list once and caches it locally
 - **Progress tracking** — real-time progress bars with entity-level status
 
+## Related Repositories
+
+- [`danieljcksn/revenue-forecasting`](https://github.com/danieljcksn/revenue-forecasting) contains the reproducible forecasting pipeline, notebooks, cached model outputs, and LaTeX artifact exporters that consume the monthly series collected with this package.
+
 ## Supported Reports
 
 | Report | Full Name | Periodicity | Key Contents |
@@ -186,7 +190,29 @@ siconfi transform-monthly
 This is the recommended format for time series forecasting research — 120+ monthly
 observations over 10 years, with granular tax category breakdown.
 
-### 7. View available report types and codes
+### 7. Extract the municipality forecast benchmark
+
+RREO-Anexo 03 also includes the municipality's updated forecast by tax category.
+The helper functions in `siconfi.prefeitura_forecast` extract that benchmark,
+prefer the earliest collected bimonthly period for each year, and compare it with
+the realized annual total reconstructed from the same monthly source.
+
+```python
+from pathlib import Path
+
+from siconfi.prefeitura_forecast import (
+    cross_with_realizado,
+    extract_prefeitura_forecast,
+    extract_realizado_anual,
+)
+
+data_dir = Path("data")
+forecast = extract_prefeitura_forecast(data_dir)
+realized = extract_realizado_anual(data_dir)
+benchmark = cross_with_realizado(forecast, realized)
+```
+
+### 8. View available report types and codes
 
 ```bash
 siconfi info
