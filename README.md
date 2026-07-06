@@ -56,7 +56,7 @@ SICONFI aggregates fiscal reports from all 5,570 Brazilian municipalities, 26 st
 
 ```bash
 # Clone the repository
-git clone https://github.com/<your-username>/siconfi-collector.git
+git clone https://github.com/danieljcksn/siconfi-collector.git
 cd siconfi-collector
 
 # Create and activate a virtual environment
