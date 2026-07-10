@@ -77,7 +77,7 @@ class EntityRegistry:
     @classmethod
     def from_cache(cls, path: Path) -> EntityRegistry:
         """Load previously saved entity registry from a JSON file."""
-        with open(path) as fh:
+        with open(path, encoding="utf-8") as fh:
             data = json.load(fh)
         entities = [Entity(**e) for e in data]
         logger.info("Loaded %d entities from cache %s.", len(entities), path)
@@ -87,7 +87,7 @@ class EntityRegistry:
         """Persist the registry to a JSON file for offline reuse."""
         path.parent.mkdir(parents=True, exist_ok=True)
         data = [e.__dict__ for e in self.entities]
-        with open(path, "w") as fh:
+        with open(path, "w", encoding="utf-8") as fh:
             json.dump(data, fh, ensure_ascii=False, indent=2)
         logger.info("Saved %d entities to %s.", len(self.entities), path)
 

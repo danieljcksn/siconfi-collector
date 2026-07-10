@@ -14,7 +14,7 @@ from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
 
-from siconfi.api import fetch_dca, fetch_rgf, fetch_rreo
+from siconfi.api import fetch_dca, fetch_rreo, fetch_rgf
 from siconfi.entities import Entity
 
 logger = logging.getLogger(__name__)

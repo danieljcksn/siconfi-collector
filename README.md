@@ -16,10 +16,6 @@ SICONFI aggregates fiscal reports from all 5,570 Brazilian municipalities, 26 st
 - **Entity registry cache** — fetches the full municipality/state list once and caches it locally
 - **Progress tracking** — real-time progress bars with entity-level status
 
-## Related Repositories
-
-- [`danieljcksn/revenue-forecasting`](https://github.com/danieljcksn/revenue-forecasting) contains the reproducible forecasting pipeline, notebooks, cached model outputs, and LaTeX artifact exporters that consume the monthly series collected with this package.
-
 ## Supported Reports
 
 | Report | Full Name | Periodicity | Key Contents |
@@ -190,27 +186,30 @@ siconfi transform-monthly
 This is the recommended format for time series forecasting research — 120+ monthly
 observations over 10 years, with granular tax category breakdown.
 
-### 7. Extract the municipality forecast benchmark
+### 7. Extract the municipality's own budget forecast (benchmark)
 
-RREO-Anexo 03 also includes the municipality's updated forecast by tax category.
-The helper functions in `siconfi.prefeitura_forecast` extract that benchmark,
-prefer the earliest collected bimonthly period for each year, and compare it with
-the realized annual total reconstructed from the same monthly source.
+**RREO-Anexo 03** also carries a `PREVISÃO ATUALIZADA <year>` column per revenue
+category. The `transform-prefeitura-forecast` command extracts it per
+(entity, year, tax), crosses it with the realized annual total (sum of the twelve
+`<MR>` months of the same annex), and computes the municipality's own forecast
+error — a natural benchmark for any forecasting model.
 
-```python
-from pathlib import Path
+When more than one bimonthly period was collected for the same year, the command
+keeps the LOWEST period number (P1 is the closest to the original LOA budget
+forecast, before mid-year revisions). Collect period 1 alongside period 6 if you
+want this benchmark:
 
-from siconfi.prefeitura_forecast import (
-    cross_with_realizado,
-    extract_prefeitura_forecast,
-    extract_realizado_anual,
-)
+```bash
+# Step 1: collect periods 1 (forecast source) and 6 (all 12 realized months)
+siconfi collect rreo --entity 3509502 --years 2015-2024 --annex "RREO-Anexo 03" --periods 1,6
 
-data_dir = Path("data")
-forecast = extract_prefeitura_forecast(data_dir)
-realized = extract_realizado_anual(data_dir)
-benchmark = cross_with_realizado(forecast, realized)
+# Step 2: build the benchmark table
+siconfi transform-prefeitura-forecast
 ```
+
+Output columns: `cod_ibge`, `entity_name`, `year`, `tributo`,
+`previsao_prefeitura`, `periodo_fonte` (1 = closest to the LOA),
+`realizado_anual`, `erro_pct_prefeitura`, `vies_prefeitura`.
 
 ### 8. View available report types and codes
 

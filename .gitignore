@@ -26,6 +26,8 @@ Thumbs.db
 data/
 *.csv
 *.parquet
+# Fixtures de teste sao versionadas (excecao ao *.csv acima)
+!tests/fixtures/*.csv
 
 # Testing
 .pytest_cache/

@@ -32,7 +32,7 @@ from pathlib import Path
 
 import click
 
-from siconfi.entities import REGIONS, STATE_NAMES, Entity, EntityRegistry
+from siconfi.entities import EntityRegistry, Entity, STATE_NAMES, REGIONS
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -119,7 +119,7 @@ def _print_result(result) -> None:
     click.echo(f"  Empty responses: {result.empty}")
     click.echo(f"  Failed         : {result.failed}")
     if result.errors:
-        click.echo("  First 5 errors:")
+        click.echo(f"  First 5 errors:")
         for err in result.errors[:5]:
             click.echo(f"    • {err}")
     click.echo("──────────────────────────")
@@ -217,11 +217,7 @@ _entity_options = [
                  help="IBGE code(s) of specific entities."),
     click.option("--state", "-s", "states", multiple=True,
                  help="Collect all municipalities in state(s) (e.g. SP, RJ)."),
-    click.option(
-        "--region",
-        "-r",
-        help="Collect all municipalities in a region (NO/NE/SE/SU/CO).",
-    ),
+    click.option("--region", "-r", help="Collect all municipalities in a region (NO/NE/SE/SU/CO)."),
     click.option("--all", "all_flag", is_flag=True,
                  help="Collect data for ALL municipalities in Brazil."),
     click.option("--min-pop", type=int, default=0, show_default=True,
@@ -482,7 +478,7 @@ def transform(ctx: click.Context, annex: str, cumulative: bool, output: str | No
     click.echo(f"  Rows     : {n_rows}")
     click.echo(f"  Accounts : {len(accounts)}")
     click.echo(f"  Saved to : {out_path}")
-    click.echo("\n  Revenue categories found:")
+    click.echo(f"\n  Revenue categories found:")
     for acc in accounts:
         click.echo(f"    - {acc}")
 
@@ -536,9 +532,58 @@ def transform_monthly(ctx: click.Context, annex: str, output: str | None) -> Non
     click.echo(f"  Rows     : {n_rows} ({n_rows // max(n_entities, 1)} months/entity)")
     click.echo(f"  Accounts : {len(accounts)}")
     click.echo(f"  Saved to : {out_path}")
-    click.echo("\n  Revenue categories:")
+    click.echo(f"\n  Revenue categories:")
     for acc in accounts:
         click.echo(f"    - {acc}")
+
+
+@cli.command("transform-prefeitura-forecast")
+@click.option("--annex", default="RREO-Anexo_03", show_default=True,
+              help="Annex subdirectory name (a previsao por tributo vem do Anexo 03).")
+@click.option("--output", "-o", default=None,
+              help="Output CSV path. Default: <data-dir>/transformed/prefeitura_forecast.csv")
+@click.pass_context
+def transform_prefeitura_forecast(ctx: click.Context, annex: str, output: str | None) -> None:
+    """Extrai a projecao de receita da propria prefeitura por entidade/ano/tributo.
+
+    Usa a coluna 'PREVISAO ATUALIZADA <ano>' do RREO-Anexo 03 (que, ao contrario
+    do Anexo 01, discrimina IPTU/ISS/ITBI individualmente). Quando ha mais de um
+    bimestre coletado para o mesmo ano, prefere o de menor numero (o P1 e o mais
+    proximo da Previsao Inicial da LOA). Cruza com o realizado anual (soma dos 12
+    meses do calendario) e calcula o erro percentual da prefeitura --- o benchmark
+    usado no confronto com Oliveira (2024) (Subsecao 4.3.2 do TCC).
+
+    Requires data collected with: siconfi collect rreo --annex "RREO-Anexo 03"
+    (idealmente tambem com --periods 1 para aproximar a Previsao Inicial).
+    """
+    from siconfi.prefeitura_forecast import (
+        extract_prefeitura_forecast,
+        extract_realizado_anual,
+        cross_with_realizado,
+    )
+
+    data_dir = ctx.obj["data_dir"]
+
+    click.echo(f"\nExtracting PREVISAO ATUALIZADA from [{annex}]")
+
+    prefeitura = extract_prefeitura_forecast(data_dir, annex=annex)
+    realizado = extract_realizado_anual(data_dir, annex=annex)
+    df = cross_with_realizado(prefeitura, realizado)
+
+    if output is None:
+        out_path = data_dir / "transformed" / "prefeitura_forecast.csv"
+    else:
+        out_path = Path(output)
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(out_path, index=False, encoding="utf-8-sig")
+
+    n_entities = df["cod_ibge"].nunique() if not df.empty else 0
+    periodos = sorted(df["periodo_fonte"].unique()) if not df.empty else []
+    click.echo(f"  Rows       : {len(df)}")
+    click.echo(f"  Entities   : {n_entities}")
+    click.echo(f"  Periodos   : {periodos}  (1 = mais proximo da Previsao Inicial)")
+    click.echo(f"  Saved to   : {out_path}")
 
 
 # ── `info` command ───────────────────────────────────────────────────────────
